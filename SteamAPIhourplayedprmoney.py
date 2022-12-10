@@ -1,5 +1,4 @@
-#https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=-----&steamid=76561198038062874&format=json&include_appinfo=1
-#https://store.steampowered.com/api/appdetails/?appids=107410&filters=basic,price_overview
+import csv
 import requests
 
 #For JSON of owned game with appid & name
@@ -20,7 +19,6 @@ requestQueryApi = {
 
 respondApi = requests.get(hostApi+pathApi,requestQueryApi)
 
-gameIndex = 1 # Iterable from amount of games owned 'respondApiGamesLength'
 appIDs = []
 appNames = []
 playTimes = []
@@ -29,7 +27,7 @@ respondApiJsonPlaytimeFEMin = []
 respondApiJson = respondApi.json()
 respondApiGamesLength = len(respondApiJson['response']['games']) #Length for gameIndex iterable
 print(respondApiGamesLength)
-#for gameIndex in range(respondApiGamesLength):
+
 for gameIndex in range(respondApiGamesLength):
     respondApiJsonName = respondApiJson['response']['games'][gameIndex]['name']
     appNames.append(respondApiJsonName)
@@ -49,7 +47,6 @@ print(respondApiGamesLength) #Checking amount of games owned
 
 #Gets appid from other request and add basic information and price overview
 requestQueryStore = {
-    #'appids': f'{respondApiJsonAppId}',
     'appids': f'{csvAppIDs}',
     'filters': 'price_overview'
 }
@@ -64,45 +61,24 @@ gamePrices = []
 
 respondGameJsonPriceCurrency = respondGameJson[str(appIDs[0])]['data']['price_overview']['currency'] #Assuming it will be same currency for all games
 for i in range(respondApiGamesLength):
-    #respondGameJsonInitalPriceInCents = respondGameJson[str(appIDs[i])]['data']['price_overview']['initial']
     if respondGameJson[str(appIDs[i])]['success'] and respondGameJson[str(appIDs[i])]['data']:
         gamePrices.append(respondGameJson[str(appIDs[i])]['data']['price_overview']['initial'])
     else:
         gamePrices.append(0)
 
+dataForCSV = []
+
 for i in range(respondApiGamesLength):
     if gamePrices[i] != 0:
         print(appNames[i])
         print(str(gamePrices[i]/100)+respondGameJsonPriceCurrency)
+        print(str(respondApiJsonPlaytimeFEMin[i]/6))
         print(str((respondApiJsonPlaytimeFEMin[i]/60)/(gamePrices[i]/100))+" Hr/"+respondGameJsonPriceCurrency+"\n") #Amount of hours played pr *Currency*(Eur)
+        dataForCSV.append([appNames[i],gamePrices[i]/100,round(respondApiJsonPlaytimeFEMin[i]/60,2),round((respondApiJsonPlaytimeFEMin[i]/60)/(gamePrices[i]/100),2)])
 
-    #Free games incl. as no data
-    #     
-    # print(appNames[i])
-    # if gamePrices[i] != 0:
-    #     print(str(gamePrices[i]/100)+respondGameJsonPriceCurrency)
-    #     print(str((respondApiJsonPlaytimeFEMin[i]/60)/(gamePrices[i]/100))+" Hr/"+respondGameJsonPriceCurrency+"\n") #Amount of hours played pr *Currency*(Eur)
-    # else:
-    #     print("Game was/is free -> no data\n")
-    
-
-
-
-##### Write JSON to test.txt for JSON Viewer for analyzing #####
-#
-###SteamAPIJSON
-##Playtime
-# respond = requests.get(hostApi+pathApi,requestQueryApi)
-# print(respond.json())
-# with open('test.txt','w', encoding='utf-8') as f:
-#     f.write(str(respond.text))
-#     f.close()
-#
-###StoreJSON
-##Price
-# respond = requests.get(hostStore+pathStore,requestQueryStore)
-# print(respond.json())
-# with open('test.txt','w', encoding='utf-8') as f:
-#     f.write(str(respond.text))
-#     f.close()
-###############################################################
+with open('steamplayedgamesprice.csv',"w",newline='')as f:
+    writer = csv.writer(f)
+    headerForCSV = ['name','priceEUR','hours','HRsPrPrice']
+    writer.writerow(headerForCSV)
+    writer.writerows(dataForCSV)
+    f.close()
