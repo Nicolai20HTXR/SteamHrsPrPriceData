@@ -22,28 +22,18 @@ respondApi = requests.get(hostApi+pathApi,requestQueryApi)
 appIDs = []
 appNames = []
 playTimes = []
-respondApiJsonPlaytimeFEMin = []
+respondApiJSON = respondApi.json()
 
-respondApiJson = respondApi.json()
-respondApiGamesLength = len(respondApiJson['response']['games']) #Length for gameIndex iterable
-print(respondApiGamesLength)
+respondApiGamesLength = len(respondApiJSON['response']['games']) #Length for gameIndex iterable
 
+#Appends app names, play time and app ids for game with game index corresponding to eachother
 for gameIndex in range(respondApiGamesLength):
-    respondApiJsonName = respondApiJson['response']['games'][gameIndex]['name']
-    appNames.append(respondApiJsonName)
-    print(respondApiJsonName)
+    appNames.append(respondApiJSON['response']['games'][gameIndex]['name'])
+    playTimes.append(respondApiJSON['response']['games'][gameIndex]['playtime_forever']) #In minutes
+    appIDs.append(respondApiJSON['response']['games'][gameIndex]['appid'])
 
-    respondApiJsonAppId = respondApiJson['response']['games'][gameIndex]['appid']
-    respondApiJsonPlaytimeFEMin.append(respondApiJson['response']['games'][gameIndex]['playtime_forever']) #In minutes
-
-    playTimes.append(respondApiJsonPlaytimeFEMin)
-    appIDs.append(respondApiJsonAppId)
-
-
+#Make list to CSV
 csvAppIDs = str(appIDs)[1:-1].replace(' ','')
-print(csvAppIDs)
-
-print(respondApiGamesLength) #Checking amount of games owned
 
 #Gets appid from other request and add basic information and price overview
 requestQueryStore = {
@@ -51,34 +41,52 @@ requestQueryStore = {
     'filters': 'price_overview'
 }
 
+#Price request
 respondGame = requests.get(hostStore+pathStore,requestQueryStore)
-
-respondGameJson = respondGame.json()
-print(respondGameJson)
-print(respondApiJsonPlaytimeFEMin) #Playtime in minutes
+respondGameJSON = respondGame.json()
 
 gamePrices = []
+dataForCSV = []
+respondGameJsonPriceCurrency = respondGameJSON[str(appIDs[0])]['data']['price_overview']['currency'] #Assuming it will be same currency for all games
 
-respondGameJsonPriceCurrency = respondGameJson[str(appIDs[0])]['data']['price_overview']['currency'] #Assuming it will be same currency for all games
+#Appends prices data for corresponding game index
 for i in range(respondApiGamesLength):
-    if respondGameJson[str(appIDs[i])]['success'] and respondGameJson[str(appIDs[i])]['data']:
-        gamePrices.append(respondGameJson[str(appIDs[i])]['data']['price_overview']['initial'])
+    if respondGameJSON[str(appIDs[i])]['success'] and respondGameJSON[str(appIDs[i])]['data']:
+        gamePrices.append(respondGameJSON[str(appIDs[i])]['data']['price_overview']['initial'])
     else:
         gamePrices.append(0)
 
-dataForCSV = []
 
+#Prints in console for debugging/showing
 for i in range(respondApiGamesLength):
     if gamePrices[i] != 0:
         print(appNames[i])
         print(str(gamePrices[i]/100)+respondGameJsonPriceCurrency)
-        print(str(respondApiJsonPlaytimeFEMin[i]/6))
-        print(str((respondApiJsonPlaytimeFEMin[i]/60)/(gamePrices[i]/100))+" Hr/"+respondGameJsonPriceCurrency+"\n") #Amount of hours played pr *Currency*(Eur)
-        dataForCSV.append([appNames[i],gamePrices[i]/100,round(respondApiJsonPlaytimeFEMin[i]/60,2),round((respondApiJsonPlaytimeFEMin[i]/60)/(gamePrices[i]/100),2)])
+        print(str(playTimes[i]/6))
+        print(str((playTimes[i]/60)/(gamePrices[i]/100))+" Hr/"+respondGameJsonPriceCurrency+"\n") #Amount of hours played pr *Currency*(Eur)
+        dataForCSV.append([appIDs[i],appNames[i],gamePrices[i]/100,round(playTimes[i]/60,2),round((playTimes[i]/60)/(gamePrices[i]/100),2)])
 
+#Writes to CSV
 with open('steamplayedgamesprice.csv',"w",newline='')as f:
     writer = csv.writer(f)
-    headerForCSV = ['name','priceEUR','hours','HRsPrPrice']
+    headerForCSV = ['appID','name','priceEUR','hours','HRsPrPrice']
     writer.writerow(headerForCSV)
     writer.writerows(dataForCSV)
+    f.close()
+
+
+#Sorting file for hours played
+
+with open('steamplayedgamesprice.csv',newline='') as csvfile:
+    spamreader = csv.DictReader(csvfile, delimiter=",")
+    sortedlist = sorted(spamreader, key=lambda row:float(row['hours']), reverse=True)
+    csvfile.close()
+
+
+with open('steamplayedgamesprice.csv', 'w',newline='') as f:
+    fieldnames = ['appID','name','priceEUR','hours','HRsPrPrice']
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in sortedlist:
+        writer.writerow(row)
     f.close()
