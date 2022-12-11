@@ -97,7 +97,7 @@ def main():
     #Asking user if they wanna save the data
     if input('Wanna save to CSV? [Y,n]\n') == 'Y':
         #Writes to CSV
-        with open(os.getcwd()+'\\SteamAppsHrsPr'+respondGameJsonPriceCurrency+".csv","w",newline='')as f:
+        with open(os.getcwd()+'\\SteamAppsHrsPr'+respondGameJsonPriceCurrency+".csv","w",newline='') as f:
             writer = csv.writer(f)
             headerForCSV = ['appID','name','price' + f'{respondGameJsonPriceCurrency}','hours','HRsPr'+respondGameJsonPriceCurrency]
             writer.writerow(headerForCSV)
