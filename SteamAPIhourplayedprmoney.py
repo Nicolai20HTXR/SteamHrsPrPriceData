@@ -54,7 +54,6 @@ def main():
     respondGameJSON = respondGame.json()
 
     gamePrices = []
-    dataForCSV = []
     respondGameJsonPriceCurrency = respondGameJSON[str(appIDs[0])]['data']['price_overview']['currency'] #Assuming it will be same currency for all games
 
     #Appends prices data for corresponding game index
@@ -64,40 +63,44 @@ def main():
         else:
             gamePrices.append(0)
 
+    #New lists for sorting
+    relevantAppIDs = []
+    relevantAppNames = []
+    relevantGamePrice = []
+    relevantAppPlayedHrs = []
+    relevantAppPlayedHrsPrPrice = []
 
-    #Prints in console for debugging/showing
+    #Appends relevant data
     for i in range(respondApiGamesLength):
         if gamePrices[i] != 0:
-            print(appNames[i])
-            print(str(gamePrices[i]/100)+respondGameJsonPriceCurrency)
-            print(str(playTimes[i]/6))
-            print(str((playTimes[i]/60)/(gamePrices[i]/100))+" Hr/"+respondGameJsonPriceCurrency+"\n") #Amount of hours played pr *Currency*(Eur)
-            dataForCSV.append([appIDs[i],appNames[i],gamePrices[i]/100,round(playTimes[i]/60,2),round((playTimes[i]/60)/(gamePrices[i]/100),2)])
+            relevantAppIDs.append(appIDs[i])
+            relevantAppNames.append(appNames[i])
+            relevantGamePrice.append(gamePrices[i]/100)
+            relevantAppPlayedHrs.append(round(playTimes[i]/60,2))
+            relevantAppPlayedHrsPrPrice.append((playTimes[i]/60)/(gamePrices[i]/100))
 
-    #Writes to CSV
-    with open('steamplayedgamesprice.csv',"w",newline='')as f:
-        writer = csv.writer(f)
-        headerForCSV = ['appID','name','priceEUR','hours','HRsPrPrice']
-        writer.writerow(headerForCSV)
-        writer.writerows(dataForCSV)
-        f.close()
+    #Sorts for hours played
+    relevantZip = zip(relevantAppIDs,relevantAppNames,relevantGamePrice,relevantAppPlayedHrs,relevantAppPlayedHrsPrPrice)
+    relevantList = list(relevantZip)
+    relevantSortedList = sorted(relevantList, key=lambda row:row[3])
 
 
-    #Sorting file for hours played
+    #Prints in console for debugging/showing
+    for i in range(len(relevantSortedList)):
+        print(relevantSortedList[i][1]+ ": "+ str(relevantSortedList[i][0]))
+        print("Price: "+ str(relevantSortedList[i][2])+str(respondGameJsonPriceCurrency))
+        print("Hours played: "+ str(relevantSortedList[i][3]))
+        print("Hours played pr "+ str(respondGameJsonPriceCurrency) + ": "+ str(relevantSortedList[i][4])+"\n")
 
-    with open('steamplayedgamesprice.csv',newline='') as csvfile:
-        spamreader = csv.DictReader(csvfile, delimiter=",")
-        sortedlist = sorted(spamreader, key=lambda row:float(row['hours']), reverse=True)
-        csvfile.close()
-
-
-    with open('steamplayedgamesprice.csv', 'w',newline='') as f:
-        fieldnames = ['appID','name','priceEUR','hours','HRsPrPrice']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in sortedlist:
-            writer.writerow(row)
-        f.close()
+    #Asking user if they wanna save the data
+    if input('Wanna save to CSV? [Y,n]\n') == 'Y':
+        #Writes to CSV
+        with open('SteamAppsHrsPr'+respondGameJsonPriceCurrency+".csv","w",newline='')as f:
+            writer = csv.writer(f)
+            headerForCSV = ['appID','name','price' + f'{respondGameJsonPriceCurrency}','hours','HRsPr'+respondGameJsonPriceCurrency]
+            writer.writerow(headerForCSV)
+            writer.writerows(relevantSortedList[::-1])
+            f.close()
 
     input('Press any key to close.')
 main()
