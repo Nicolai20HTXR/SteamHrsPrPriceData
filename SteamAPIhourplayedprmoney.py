@@ -97,12 +97,12 @@ def main():
     #Asking user if they wanna save the data
     if input('Wanna save to CSV? [Y,n]\n') == 'Y':
         #Writes to CSV
-        with open('SteamAppsHrsPr'+respondGameJsonPriceCurrency+".csv","w",newline='')as f:
+        with open(os.getcwd()+'\\SteamAppsHrsPr'+respondGameJsonPriceCurrency+".csv","w",newline='')as f:
             writer = csv.writer(f)
             headerForCSV = ['appID','name','price' + f'{respondGameJsonPriceCurrency}','hours','HRsPr'+respondGameJsonPriceCurrency]
             writer.writerow(headerForCSV)
             writer.writerows(relevantSortedList[::-1])
             f.close()
 
-    input('Press any key to close.')
+    input('Press ENTER to close.')
 main()
