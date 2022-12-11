@@ -4,6 +4,8 @@ import os
 
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
+    print("For information about the Steam API: https://steamcommunity.com/dev")
+    print("Here for creating and getting the API key: https://steamcommunity.com/dev/apikey")
     steamAPI = input('Input Steam API:\n')
     steamID64 = input('SteamID64 of user:\n')
     os.system('cls' if os.name == 'nt' else 'clear')
