@@ -79,7 +79,7 @@ def main():
             relevantAppNames.append(appNames[i])
             relevantGamePrice.append(gamePrices[i]/100)
             relevantAppPlayedHrs.append(round(playTimes[i]/60,2))
-            relevantAppPlayedHrsPrPrice.append((playTimes[i]/60)/(gamePrices[i]/100))
+            relevantAppPlayedHrsPrPrice.append(round((playTimes[i]/60)/(gamePrices[i]/100),2))
 
     #Sorts for hours played
     relevantZip = zip(relevantAppIDs,relevantAppNames,relevantGamePrice,relevantAppPlayedHrs,relevantAppPlayedHrsPrPrice)
